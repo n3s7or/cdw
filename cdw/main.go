@@ -82,7 +82,13 @@ func main() {
                     fmt.Print(*event.Message)
                 }
 
-                if (token != nil && *token == *res.NextForwardToken) {
+                // check current build state
+                build, err := naws.GetBuildsInfo(c, cbClient, buildsListNames[selectedIndex:selectedIndex+1])
+                if err != nil{
+                    return err
+                }
+
+                if (token != nil && *token == *res.NextForwardToken && build[0].BuildComplete) {
                     break;
                 }
 
