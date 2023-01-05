@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+    "github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/aws/aws-sdk-go-v2/config"
     cbtypes "github.com/aws/aws-sdk-go-v2/service/codebuild/types"
 	"github.com/n3s7or/cdw/pkg/naws"
@@ -33,7 +34,14 @@ func main() {
             
             in := survey.Select{Message: "Select project:", Options: projects}
             var selectedIndex int
-            survey.AskOne(&in, &selectedIndex)
+            err = survey.AskOne(&in, &selectedIndex)
+            if err != nil {
+                if err == terminal.InterruptErr {
+                    fmt.Println("Interrupted by user, exiting...")
+                    return nil
+                }
+                return err
+            }
 
             buildsListNames, err := naws.ListBuilds(c, cbClient, &projects[selectedIndex])
             if err != nil {
@@ -66,7 +74,14 @@ func main() {
             }
 
             in = survey.Select{Message: "Select build:", Options: listBuilds}
-            survey.AskOne(&in, &selectedIndex)
+            err = survey.AskOne(&in, &selectedIndex)
+            if err != nil {
+                if err == terminal.InterruptErr {
+                    fmt.Println("Interrupted by user, exiting...")
+                    return nil
+                }
+                return err
+            }
 
             group := builds[selectedIndex].Logs.GroupName
             stream := builds[selectedIndex].Logs.StreamName
