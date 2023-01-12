@@ -29,6 +29,15 @@ func GetBuildsInfo(c *cli.Context, client *codebuild.Client, ids []string) ([]cb
 	return res.Builds, nil
 }
 
+func GetBuildInfo(c *cli.Context, client *codebuild.Client, id string) (cbtypes.Build, error) {
+	res, err := client.BatchGetBuilds(c.Context, &codebuild.BatchGetBuildsInput{Ids: []string{id}})
+	if err != nil {
+		return cbtypes.Build{}, err
+	}
+
+	return res.Builds[0], nil
+}
+
 
 func listBuilds(c *cli.Context, client *codebuild.Client, project *string) ([]string, error){
 	res, err := client.ListBuildsForProject(c.Context, &codebuild.ListBuildsForProjectInput{ProjectName: project})

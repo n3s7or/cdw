@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-    "github.com/AlecAivazis/survey/v2/terminal"
+	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/aws/aws-sdk-go-v2/config"
-    cbtypes "github.com/aws/aws-sdk-go-v2/service/codebuild/types"
+	cbtypes "github.com/aws/aws-sdk-go-v2/service/codebuild/types"
+	"github.com/gen2brain/beeep"
 	"github.com/n3s7or/cdw/pkg/naws"
 	"github.com/urfave/cli/v2"
 )
@@ -21,6 +22,7 @@ func main() {
 
             cfg, err := config.LoadDefaultConfig(c.Context)
             if err != nil {
+                log.Fatal(err.Error())
             	return err
             }
 
@@ -28,7 +30,7 @@ func main() {
 
             projects, err := naws.ListProjects(c, cbClient)
             if err != nil {
-                println(err.Error())
+                log.Fatal(err.Error())
                 return err
             }
             
@@ -40,6 +42,7 @@ func main() {
                     fmt.Println("Interrupted by user, exiting...")
                     return nil
                 }
+                log.Fatal(err.Error())
                 return err
             }
 
@@ -61,7 +64,7 @@ func main() {
                 builds, err = naws.GetBuildsInfo(c, cbClient, buildsListNames)
             }
             if err != nil {
-                println(err.Error())
+                log.Fatal(err.Error())
                 return nil
             }
             
@@ -80,16 +83,37 @@ func main() {
                     fmt.Println("Interrupted by user, exiting...")
                     return nil
                 }
+                log.Fatal(err.Error())
                 return err
             }
 
-            group := builds[selectedIndex].Logs.GroupName
-            stream := builds[selectedIndex].Logs.StreamName
+            selectedBuild := builds[selectedIndex]
+
+            var group *string
+            var stream *string
+            
+            // sometimes when getting log config so quickly it returns empty group or stream
+            for _, d := range([]time.Duration{350, 650, 1000}) {
+                group = selectedBuild.Logs.GroupName
+                stream = selectedBuild.Logs.StreamName
+
+                if group != nil && stream != nil { break }
+
+                time.Sleep(time.Millisecond * d)
+                build, err := naws.GetBuildInfo(c, cbClient, buildsListNames[selectedIndex])
+                if err != nil {
+                    log.Fatal(err.Error())
+                    return nil
+                }
+                selectedBuild = build
+                selectedBuild = build
+            }
 
             var token *string
             for  {
                 res, err := naws.GetEvents(c, &cfg, group, stream, token)
                 if err != nil {
+                    log.Fatal(err.Error())
                     return err
                 }
 
@@ -97,13 +121,17 @@ func main() {
                     fmt.Print(*event.Message)
                 }
 
-                // check current build state
-                build, err := naws.GetBuildsInfo(c, cbClient, buildsListNames[selectedIndex:selectedIndex+1])
+                // check current build state (keeping selectedBuild value)
+                build, err := naws.GetBuildInfo(c, cbClient, *selectedBuild.Id)
                 if err != nil{
+                    log.Fatal(err.Error())
                     return err
                 }
 
-                if (token != nil && *token == *res.NextForwardToken && build[0].BuildComplete) {
+                if (token != nil && *token == *res.NextForwardToken && build.BuildComplete) {
+                    if selectedBuild.BuildComplete {
+                        beeep.Alert("CodeWatch", "Build completed", "")
+                    }
                     break;
                 }
 
