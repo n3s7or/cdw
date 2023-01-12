@@ -129,7 +129,7 @@ func main() {
                 }
 
                 if (token != nil && *token == *res.NextForwardToken && build.BuildComplete) {
-                    if selectedBuild.BuildComplete {
+                    if !selectedBuild.BuildComplete {
                         beeep.Alert("CodeWatch", "Build completed", "")
                     }
                     break;
