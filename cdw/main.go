@@ -18,6 +18,9 @@ import (
 
 func main() {
     app := &cli.App{
+        Name:                 "cdw",
+		Usage:                "https://github.com/n3s7or/cdw#readme",
+        Commands:   []*cli.Command{}, // todo: add commands
         Action: func(c *cli.Context) error {
 
             cfg, err := config.LoadDefaultConfig(c.Context)
