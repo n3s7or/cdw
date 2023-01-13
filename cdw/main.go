@@ -13,11 +13,15 @@ import (
 	cbtypes "github.com/aws/aws-sdk-go-v2/service/codebuild/types"
 	"github.com/gen2brain/beeep"
 	"github.com/n3s7or/cdw/pkg/naws"
+    "github.com/n3s7or/cdw/pkg/commands"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
     app := &cli.App{
+        Name:                 "cdw",
+		Usage:                "https://github.com/n3s7or/cdw#readme",
+        Commands:   []*cli.Command{&commands.ProjectsCommand}, // todo: add commands
         Action: func(c *cli.Context) error {
 
             cfg, err := config.LoadDefaultConfig(c.Context)
@@ -28,7 +32,8 @@ func main() {
 
             cbClient := naws.GetClient(c, &cfg)
 
-            projects, err := naws.ListProjects(c, cbClient)
+            var cbNextToken *string // ToDo: get other projects if there is a next token
+            projects, err := naws.ListProjects(c, cbClient, cbNextToken)
             if err != nil {
                 log.Fatal(err.Error())
                 return err

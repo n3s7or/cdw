@@ -48,8 +48,17 @@ func listBuilds(c *cli.Context, client *codebuild.Client, project *string) ([]st
 	return res.Ids, nil
 }
 
-func ListProjects(c *cli.Context, client *codebuild.Client) ([]string, error) {
-	projects, err := client.ListProjects(c.Context, &codebuild.ListProjectsInput{})
+func ListProjects(c *cli.Context, client *codebuild.Client, nextToken *string) ([]string, error) {
+	input := codebuild.ListProjectsInput{
+		SortBy: "NAME",
+		SortOrder: "ASCENDING",
+	}
+
+	if nextToken != nil {
+		input.NextToken = nextToken
+	}
+
+	projects, err := client.ListProjects(c.Context, &input)
 	if err != nil {
 		return []string{}, err
 	}
