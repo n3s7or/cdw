@@ -22,10 +22,8 @@ var ProjectsCommand = cli.Command{
             	return err
             }
 		
-		cbClient := naws.GetClient(ctx, &cfg)
-		
 		var cbNextToken *string // ToDo: get other projects if there is a next token
-		projects, err := naws.ListProjects(ctx, cbClient, cbNextToken)
+		projects, err := naws.ListProjects(ctx, &cfg, cbNextToken)
 		if err != nil {
 			log.Fatal(err.Error())
 			return err
@@ -53,15 +51,13 @@ var ProjectsFilterCommand = cli.Command{
             	return err
             }
 		
-		cbClient := naws.GetClient(ctx, &cfg)
-
 		var cbNextToken *string
 		var projects []string
 
 		wd := 0
 
 		for {
-			res, err := naws.ListProjects(ctx, cbClient, cbNextToken)
+			res, err := naws.ListProjects(ctx, &cfg, cbNextToken)
 			if err != nil {
 				log.Fatal(err.Error())
 				return err

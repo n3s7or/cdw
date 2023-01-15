@@ -7,20 +7,18 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func GetClient(c *cli.Context, cfg *aws.Config) *codebuild.Client {
+func getClient(c *cli.Context, cfg *aws.Config) *codebuild.Client {
 	return codebuild.NewFromConfig(*cfg)
 }
 
-func ListBuilds(c *cli.Context, client *codebuild.Client, project *string) ([]string, error){
-	builds, err := listBuilds(c, client, project)
-	if err != nil {
-		return []string{}, err
-	}
-
-	return builds, nil
+func ListBuilds(c *cli.Context, cfg *aws.Config, project *string) ([]string, error){
+	client := getClient(c, cfg)	
+	return listBuilds(c, client, project)
 }
 
-func GetBuildsInfo(c *cli.Context, client *codebuild.Client, ids []string) ([]cbtypes.Build, error) {
+func GetBuildsInfo(c *cli.Context, cfg *aws.Config, ids []string) ([]cbtypes.Build, error) {
+	client := getClient(c, cfg)
+
 	res, err := client.BatchGetBuilds(c.Context, &codebuild.BatchGetBuildsInput{Ids: ids})
 	if err != nil {
 		return []cbtypes.Build{}, err
@@ -29,7 +27,9 @@ func GetBuildsInfo(c *cli.Context, client *codebuild.Client, ids []string) ([]cb
 	return res.Builds, nil
 }
 
-func GetBuildInfo(c *cli.Context, client *codebuild.Client, id string) (cbtypes.Build, error) {
+func GetBuildInfo(c *cli.Context, cfg *aws.Config, id string) (cbtypes.Build, error) {
+	client := getClient(c, cfg)
+
 	res, err := client.BatchGetBuilds(c.Context, &codebuild.BatchGetBuildsInput{Ids: []string{id}})
 	if err != nil {
 		return cbtypes.Build{}, err
@@ -48,7 +48,9 @@ func listBuilds(c *cli.Context, client *codebuild.Client, project *string) ([]st
 	return res.Ids, nil
 }
 
-func ListProjects(c *cli.Context, client *codebuild.Client, nextToken *string) ([]string, error) {
+func ListProjects(c *cli.Context, cfg *aws.Config, nextToken *string) ([]string, error) {
+	client := getClient(c, cfg)
+	
 	input := codebuild.ListProjectsInput{
 		SortBy: "NAME",
 		SortOrder: "ASCENDING",
