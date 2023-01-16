@@ -18,10 +18,12 @@ var BuildsCommand = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "project", Required: true, Usage: "project name to check builds"},
 		&cli.BoolFlag{Name: "prompt", Usage: "If provided, prompts user to select one build among the last 10 builds, show last build logs otherwise"},
+		&cli.BoolFlag{Name: "no-logs", Usage: "If provided, only checks build state and transition to complete"},
 	},
 	Action: func(ctx *cli.Context) error {
 
 		prompt := ctx.Bool("prompt")
+		showLogs := !ctx.Bool("no-logs")
 
 		project := ctx.String("project")
 		if project == ""{
@@ -63,8 +65,18 @@ var BuildsCommand = cli.Command{
 			}
 		}
 		
-		common.MonitorBuild(ctx, &cfg, &builds[selectedIndex])
+		if showLogs{
+			err = common.MonitorBuild(ctx, &cfg, &builds[selectedIndex])
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			return nil
+		}
 
+		err = common.MonitorBuildState(ctx, &cfg, &builds[selectedIndex])
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 		return nil
 	},
 }
