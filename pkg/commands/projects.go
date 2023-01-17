@@ -22,7 +22,7 @@ var ProjectsCommand = cli.Command{
             	return err
             }
 		
-		var cbNextToken *string // ToDo: get other projects if there is a next token
+		var cbNextToken *string
 		projects, err := naws.ListProjects(ctx, &cfg, cbNextToken)
 		if err != nil {
 			log.Fatal(err.Error())
@@ -40,7 +40,7 @@ var ProjectsFilterCommand = cli.Command{
 	Flags: []cli.Flag{&cli.StringFlag{Name: "name", Required: true, Usage: "string to search"}},
 	Action: func(ctx *cli.Context) error {
 
-		name := ctx.String("name")
+		name := strings.Trim(ctx.String("name"), " ")
 		if name == ""{
 			log.Fatal("no filter string provided")
 		}
@@ -54,7 +54,7 @@ var ProjectsFilterCommand = cli.Command{
 		var cbNextToken *string
 		var projects []string
 
-		wd := 0
+		watchdog := 0
 
 		for {
 			res, err := naws.ListProjects(ctx, &cfg, cbNextToken)
@@ -69,11 +69,10 @@ var ProjectsFilterCommand = cli.Command{
 				break
 			}
 
-			// watchdog to avoid infinite loop until previous todo is fixed
+			// watchdog to avoid infinite loop until previous todo is checked
 			// I hope nobody has more than 1k projects
-			if wd > 9 {
+			if watchdog > 9 {
 				log.Fatal("KBOOM")
-				break
 			}
 		}
 

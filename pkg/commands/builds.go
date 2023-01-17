@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
@@ -13,9 +14,9 @@ import (
 )
 
 var BuildsCommand = cli.Command{
-	Name: "builds",
-	Usage: "List builds for a provided project",
-	Flags: []cli.Flag{
+	Name:	"builds",
+	Usage:	"List builds for a provided project",
+	Flags:	[]cli.Flag{
 		&cli.StringFlag{Name: "project", Required: true, Usage: "project name to check builds"},
 		&cli.BoolFlag{Name: "prompt", Usage: "If provided, prompts user to select one build among the last 10 builds, show last build logs otherwise"},
 		&cli.BoolFlag{Name: "no-logs", Usage: "If provided, only checks build state and transition to complete"},
@@ -25,9 +26,10 @@ var BuildsCommand = cli.Command{
 		prompt := ctx.Bool("prompt")
 		showLogs := !ctx.Bool("no-logs")
 
-		project := ctx.String("project")
+		project := strings.Trim(ctx.String("project"), " ")
 		if project == ""{
-			log.Fatal("no project provided")
+			fmt.Println("no project provided")
+			return nil
 		}
 
 		cfg, err := config.LoadDefaultConfig(ctx.Context)
