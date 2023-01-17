@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/n3s7or/cdw/pkg/naws"
 	"github.com/urfave/cli/v2"
@@ -51,29 +52,9 @@ var ProjectsFilterCommand = cli.Command{
             	return err
             }
 		
-		var cbNextToken *string
-		var projects []string
-
-		watchdog := 0
-
-		for {
-			res, err := naws.ListProjects(ctx, &cfg, cbNextToken)
-			if err != nil {
-				log.Fatal(err.Error())
-				return err
-			}
-			projects = append(projects, res...)
-			
-			// ToDo: check next token value on the last iteration
-			if cbNextToken == nil {
-				break
-			}
-
-			// watchdog to avoid infinite loop until previous todo is checked
-			// I hope nobody has more than 1k projects
-			if watchdog > 9 {
-				log.Fatal("KBOOM")
-			}
+		projects, err := ListAllProjects(ctx, &cfg)
+		if err != nil {
+			log.Fatal(err.Error())
 		}
 
 		// todo: create a generic filter function for cases like this
@@ -88,4 +69,35 @@ var ProjectsFilterCommand = cli.Command{
 
 		return nil
 	},
+}
+
+// ListAllProjects retrieves all projects from codebuild
+//  even if there are more than 100 projects
+//
+// ToDo: check what happens when pagination reaches last page
+//
+func ListAllProjects(ctx *cli.Context, cfg *aws.Config) ([]string, error) {
+	var cbNextToken *string		
+
+	var projects []string
+
+	watchdog := 0
+
+	for {
+		res, err := naws.ListProjects(ctx, cfg, cbNextToken)
+		if err != nil {
+			return []string{}, err
+		}
+		projects = append(projects, res...)
+		
+		if cbNextToken == nil { break }	// ToDo: check next token value on the last iteration
+
+		// watchdog to avoid infinite loop until previous ToDo is checked
+		// I hope nobody has more than 1k projects
+		if watchdog > 9 {
+			log.Fatal("KBOOM")
+		}
+	}
+
+	return projects, nil
 }

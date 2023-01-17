@@ -20,7 +20,7 @@ func main() {
 		Usage:                  "https://github.com/n3s7or/cdw#readme",
         Commands:               []*cli.Command{&commands.ProjectsCommand, &commands.BuildsCommand},
         EnableBashCompletion:   true,
-        Action: func(c *cli.Context) error {        // todo: when a non command argument is passed, show cli usage help
+        Action: func(c *cli.Context) error {
 
             cfg, err := config.LoadDefaultConfig(c.Context)
             if err != nil {
@@ -28,8 +28,7 @@ func main() {
             	return err
             }
 
-            var cbNextToken *string // ToDo: get other projects if there is a next token
-            projects, err := naws.ListProjects(c, &cfg, cbNextToken)
+            projects, err := commands.ListAllProjects(c, &cfg)
             if err != nil {
                 log.Fatal(err.Error())
                 return err
