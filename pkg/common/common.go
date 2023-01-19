@@ -2,6 +2,8 @@ package common
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -12,7 +14,26 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func MonitorBuild(c *cli.Context, cfg *aws.Config, build *cbtypes.Build) error{
+func MonitorBuild(c *cli.Context, cfg *aws.Config, build *cbtypes.Build, file string) error{
+	var writer io.Writer
+	var logFile *os.File
+	var err error
+	
+	if file != "" {
+		logFile, err = os.OpenFile(file, os.O_CREATE | os.O_APPEND | os.O_RDWR, 0666)
+		writer = io.MultiWriter(os.Stdout, logFile)
+	} 
+	if err != nil{
+		fmt.Printf("Error: %s\nLog to file will be omitted\n\n", err.Error())
+		writer = io.MultiWriter(os.Stdout)
+	}
+	
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// mw := io.MultiWriter(os.Stdout, logFile)
+	// log.SetOutput(mw)
+	
 	fmt.Printf("Showing logs for build: `%s`\n\n", *build.Id)
 	
 	var group *string
@@ -42,11 +63,16 @@ func MonitorBuild(c *cli.Context, cfg *aws.Config, build *cbtypes.Build) error{
 		}
 
 		for _, event := range(res.Events) {
-			fmt.Print(*event.Message)
+			reader := strings.NewReader(*event.Message)
+			_, err := io.Copy(writer, reader)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		buildTemp, err := naws.GetBuildInfo(c, cfg, *build.Id)
 		if err != nil{
+			logFile.Close()
 			return err
 		}
 
@@ -55,6 +81,7 @@ func MonitorBuild(c *cli.Context, cfg *aws.Config, build *cbtypes.Build) error{
 				beeep.Alert("CodeWatch", "Build completed", "")
 			}
 
+			logFile.Close()
 			return nil
 		}
 
