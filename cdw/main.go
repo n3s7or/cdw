@@ -74,7 +74,7 @@ func main() {
                 return err
             }
 
-            common.MonitorBuild(c, &cfg, &builds[selectedIndex])
+            common.MonitorBuild(c, &cfg, &builds[selectedIndex], "")
 
             return nil
         },
